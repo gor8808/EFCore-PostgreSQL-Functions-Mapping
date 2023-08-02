@@ -12,7 +12,11 @@ namespace EFCore_PostgreSQL_Functions_Mapping
 
             //await InitializeTestDataAsync(context);
 
+            //apply filters
             var query = ApplyFilters(context.Entities.AsNoTracking());
+
+            //apply orderings
+            query = ApplyOrderings(query);
 
             var result = await query.ToListAsync();
 
@@ -21,10 +25,16 @@ namespace EFCore_PostgreSQL_Functions_Mapping
 
         private static IQueryable<Entity> ApplyFilters(IQueryable<Entity> entities)
         {
-            return entities.Where(x => 
+            return entities.Where(x =>
                 Convert.ToString(CustomEFFunctions.JsonbPathQueryFirst(x.Properties, GetPropertySelectorJsonPath("Severity"))) == "\"High\"" &&
-                Convert.ToInt32(CustomEFFunctions.JsonbPathQueryFirst(x.Properties, GetPropertySelectorJsonPath("Index"))) >= 19900
+                Convert.ToInt32(CustomEFFunctions.JsonbPathQueryFirst(x.Properties, GetPropertySelectorJsonPath("Index"))) >= 1999000
                 );
+        }
+
+        private static IQueryable<Entity> ApplyOrderings(IQueryable<Entity> entities)
+        {
+            return entities.OrderBy(x => CustomEFFunctions.JsonbPathQueryFirst(x.Properties, GetPropertySelectorJsonPath("Owner")))
+                .ThenBy(x => CustomEFFunctions.JsonbPathQueryFirst(x.Properties, GetPropertySelectorJsonPath("Index")));
         }
 
         private static string GetPropertySelectorJsonPath(string propertyName)
@@ -39,8 +49,8 @@ namespace EFCore_PostgreSQL_Functions_Mapping
 
             var factory = new EntitiesDataFactory();
 
-            //Create 200,000 test entities
-            var testData = factory.CreateEntities(200000);
+            //Create 2,000,000 test entities
+            var testData = factory.CreateEntities(2000000);
 
             await context.Entities.AddRangeAsync(testData);
 
